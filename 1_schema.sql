@@ -1,5 +1,8 @@
+-- SwiftPass Schema Definition
+-- This file contains all table definitions and security policies
+
 -- Create students table with simplified required fields
-CREATE TABLE students (
+CREATE TABLE IF NOT EXISTS students (
     id UUID REFERENCES auth.users(id) PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
@@ -11,7 +14,7 @@ CREATE TABLE students (
 );
 
 -- Create admins table
-CREATE TABLE admins (
+CREATE TABLE IF NOT EXISTS admins (
     id UUID REFERENCES auth.users(id) PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
@@ -21,7 +24,7 @@ CREATE TABLE admins (
 );
 
 -- Create subjects table
-CREATE TABLE subjects (
+CREATE TABLE IF NOT EXISTS subjects (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     name TEXT NOT NULL,
     code TEXT UNIQUE NOT NULL,
@@ -30,7 +33,7 @@ CREATE TABLE subjects (
 );
 
 -- Create labs table
-CREATE TABLE labs (
+CREATE TABLE IF NOT EXISTS labs (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     name TEXT NOT NULL,
     section TEXT,
@@ -42,7 +45,7 @@ CREATE TABLE labs (
 );
 
 -- Create student_labs table (many-to-many relationship)
-CREATE TABLE student_labs (
+CREATE TABLE IF NOT EXISTS student_labs (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     student_id UUID REFERENCES students(id) NOT NULL,
     lab_id UUID REFERENCES labs(id) NOT NULL,
@@ -51,7 +54,7 @@ CREATE TABLE student_labs (
 );
 
 -- Create attendance table (references labs instead of containing lab_schedule)
-CREATE TABLE attendance (
+CREATE TABLE IF NOT EXISTS attendance (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     student_id UUID REFERENCES students(id) NOT NULL,
     lab_id UUID REFERENCES labs(id) NOT NULL,
@@ -61,7 +64,7 @@ CREATE TABLE attendance (
 );
 
 -- Create qr_codes table
-CREATE TABLE qr_codes (
+CREATE TABLE IF NOT EXISTS qr_codes (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     student_id UUID REFERENCES students(id) NOT NULL,
     qr_data JSONB NOT NULL,
@@ -69,7 +72,7 @@ CREATE TABLE qr_codes (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- Create RLS policies
+-- Enable Row Level Security on all tables
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subjects ENABLE ROW LEVEL SECURITY;
@@ -77,15 +80,6 @@ ALTER TABLE labs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE student_labs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE qr_codes ENABLE ROW LEVEL SECURITY;
-
--- Admins policies (they can access everything)
-CREATE POLICY "Admins can view their own data"
-    ON admins FOR SELECT
-    USING (auth.uid() = id);
-
-CREATE POLICY "Admins can update their own data"
-    ON admins FOR UPDATE
-    USING (auth.uid() = id);
 
 -- Function to check if user is an admin
 CREATE OR REPLACE FUNCTION is_admin() 
@@ -96,6 +90,17 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =================== SECURITY POLICIES ===================
+
+-- Admins policies
+CREATE POLICY "Admins can view their own data"
+    ON admins FOR SELECT
+    USING (auth.uid() = id);
+
+CREATE POLICY "Admins can update their own data"
+    ON admins FOR UPDATE
+    USING (auth.uid() = id);
 
 -- Students policies
 CREATE POLICY "Students can view their own data"
@@ -201,54 +206,4 @@ CREATE POLICY "Students can update their own QR codes"
 
 CREATE POLICY "Admins can view all QR codes"
     ON qr_codes FOR SELECT
-    USING (is_admin());
-
--- Create admin account (admin@swiftpass.edu / Admin123!)
--- WARNING: This script contains hard-coded credentials for demonstration purposes only.
--- In a production environment, you should use more secure methods.
-
--- Sign up the admin account using Supabase's auth.sign_up function
-SELECT
-  auth.sign_up(
-    'admin@swiftpass.edu',
-    'Admin123!',
-    NULL,
-    jsonb_build_object(
-      'full_name', 'System Administrator',
-      'role', 'super_admin'
-    )
-  );
-
--- Since the signup process is asynchronous, we need to:
--- 1. Get the user ID
--- 2. Confirm their email (skip email verification)
--- 3. Add them to the admins table
-
--- Get the user ID of the admin
-DO $$
-DECLARE
-  admin_id UUID;
-BEGIN
-  -- Get the admin user ID
-  SELECT id INTO admin_id FROM auth.users WHERE email = 'admin@swiftpass.edu';
-
-  -- Confirm the admin's email (skip email verification)
-  UPDATE auth.users 
-  SET email_confirmed_at = NOW(),
-      confirmed_at = NOW(),
-      is_confirmed = TRUE
-  WHERE id = admin_id;
-  
-  -- Add admin to the admins table
-  INSERT INTO admins (id, email, full_name, role, created_at, updated_at)
-  VALUES (
-    admin_id,
-    'admin@swiftpass.edu',
-    'System Administrator',
-    'super_admin',
-    NOW(),
-    NOW()
-  ) ON CONFLICT (id) DO NOTHING;
-  
-  RAISE NOTICE 'Created admin account with ID: %', admin_id;
-END $$; 
+    USING (is_admin()); 

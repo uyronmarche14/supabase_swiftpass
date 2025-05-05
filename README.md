@@ -75,3 +75,94 @@ The system uses the following tables:
 - JWT-based authentication
 - Row-level security with Supabase
 - Role-based access control (student/admin)
+
+# SwiftPass Database Setup
+
+This directory contains the SQL scripts and setup tools for initializing the SwiftPass database in Supabase.
+
+## Files Structure
+
+- `1_schema.sql`: Contains all table definitions and security policies
+- `2_data_init.sql`: Contains initial data setup including admin account and course/section data
+- `run_setup.sh`: Bash script to run both SQL files in order (Linux/Mac)
+- `run_setup.ps1`: PowerShell script to run both SQL files in order (Windows)
+
+## Prerequisites
+
+- Supabase CLI installed and configured
+  - Visit [Supabase CLI documentation](https://supabase.com/docs/guides/cli) for installation instructions
+
+## Running the Setup
+
+### On Windows:
+
+```powershell
+cd supabase_backend
+.\run_setup.ps1
+```
+
+### On Linux/Mac:
+
+```bash
+cd supabase_backend
+chmod +x run_setup.sh
+./run_setup.sh
+```
+
+## Manual Setup
+
+If you prefer to run the scripts manually, execute them in this order:
+
+1. Run the schema setup:
+
+   ```
+   supabase db execute --file 1_schema.sql
+   ```
+
+2. Run the data initialization:
+   ```
+   supabase db execute --file 2_data_init.sql
+   ```
+
+## Admin Account
+
+After setup, you can log in with the default admin account:
+
+- **Email**: admin@swiftpass.edu
+- **Password**: Admin123!
+
+## Database Schema
+
+### Tables
+
+1. **students**: Stores student profiles linked to Supabase auth
+2. **admins**: Stores admin profiles linked to Supabase auth
+3. **subjects**: Stores course information (BSIT, BSCS, etc.)
+4. **labs**: Stores lab sessions with course and section information
+5. **student_labs**: Many-to-many relationship between students and labs
+6. **attendance**: Tracks student attendance for labs
+7. **qr_codes**: Stores student QR code data for lab access
+
+### Course and Section Structure
+
+The database is seeded with the following courses and sections:
+
+**Courses:**
+
+- BSIT (Bachelor of Science in Information Technology)
+- BSCS (Bachelor of Science in Computer Science)
+
+**Sections:**
+
+- A2021
+- B2021
+- C2021
+
+## Troubleshooting
+
+If you encounter errors:
+
+1. Ensure Supabase CLI is installed and properly configured
+2. Verify that you have the correct permissions to access the Supabase project
+3. Check for any conflicts with existing data in your database
+4. For Windows users, ensure PowerShell execution policy allows running scripts

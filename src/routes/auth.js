@@ -6,8 +6,7 @@ const jwt = require("jsonwebtoken");
 // Register new student
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, fullName, studentId, course, labSchedule } =
-      req.body;
+    const { email, password, fullName, studentId, course } = req.body;
 
     // Create user in Supabase Auth with autoconfirm enabled
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -34,7 +33,6 @@ router.post("/register", async (req, res) => {
           full_name: fullName,
           student_id: studentId,
           course,
-          lab_schedule: labSchedule,
         },
       ]);
 
@@ -45,7 +43,6 @@ router.post("/register", async (req, res) => {
       studentId,
       fullName,
       course,
-      labSchedule,
     };
 
     // Store QR data

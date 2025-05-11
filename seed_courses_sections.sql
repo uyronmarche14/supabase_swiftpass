@@ -66,4 +66,45 @@ SELECT
     '15:00',
     '17:00',
     id
+FROM subjects WHERE code = 'BSCS';
+
+-- Add weekend labs
+INSERT INTO labs (name, section, day_of_week, start_time, end_time, subject_id)
+SELECT
+    'Programming Laboratory', 
+    'A2021',
+    'Saturday',
+    '09:00',
+    '12:00',
+    id
+FROM subjects WHERE code = 'BSIT';
+
+INSERT INTO labs (name, section, day_of_week, start_time, end_time, subject_id)
+SELECT
+    'Database Laboratory', 
+    'B2021',
+    'Saturday',
+    '13:00',
+    '16:00',
+    id
+FROM subjects WHERE code = 'BSCS';
+
+INSERT INTO labs (name, section, day_of_week, start_time, end_time, subject_id)
+SELECT
+    'Programming Laboratory', 
+    'C2021',
+    'Sunday',
+    '10:00',
+    '13:00',
+    id
+FROM subjects WHERE code = 'BSIT';
+
+INSERT INTO labs (name, section, day_of_week, start_time, end_time, subject_id)
+SELECT
+    'Database Laboratory', 
+    'A2021',
+    'Sunday',
+    '14:00',
+    '17:00',
+    id
 FROM subjects WHERE code = 'BSCS'; 
